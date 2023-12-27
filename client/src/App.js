@@ -112,10 +112,10 @@ const App = () => {
       <button onClick={handleCreateEmails}>Create Emails</button>
 
       {reportUrl && (
-        <div className="report-download">
-          <a href={reportUrl} download>Download Emails PDF</a>
-        </div>
-      )}
+          <div className="report-download">
+            <a href={reportUrl} download target="_blank" rel="noopener noreferrer">Download Report</a>
+          </div>
+        )}
 
 
     </div>
