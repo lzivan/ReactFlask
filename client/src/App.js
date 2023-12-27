@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import './App.css'; // 假设你的CSS文件名是ChatInterface.css
+import './App.css';
 
 const App = () => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [reportUrl, setReportUrl] = useState(''); // 新状态来保存报告的URL
+  const [reportUrl, setReportUrl] = useState(''); 
 
 
   const sendMessage = async () => {
@@ -14,18 +14,17 @@ const App = () => {
       sender: 'user',
     };
   
-    // 尝试解析用户消息中的人名和LinkedIn URL
+    // extract the person name and linkedin url from the input
     const personMatch = inputMessage.match(/\[PERSON: (.*?)\]/);
     const linkedinUrlMatch = inputMessage.match(/\[LINKEDINURL: (.*?)\]/);
   
     const personName = personMatch ? personMatch[1] : null;
     const linkedinUrl = linkedinUrlMatch ? linkedinUrlMatch[1] : null;
   
-    // 只定义aiMessage，不要立即添加到状态中
     let aiMessage;
   
     try {
-      // 发送消息到后端并等待响应
+      // send the message to the server and wait for the response
       const response = await axios.post('/generate_report', {
         person: personName,
         linkedin_url: linkedinUrl,
@@ -34,7 +33,7 @@ const App = () => {
         text: response.data.message,
         sender: 'ai',
       };
-      // 存储报告的URL
+      // store the report url in state
       setReportUrl(response.data.report_url);
     } catch (error) {
       console.error('Error sending message:', error);
@@ -44,10 +43,10 @@ const App = () => {
       };
     }
   
-    // 一次性更新状态以包括用户消息和AI响应
+    // show the messages on the screen for both user and ai
     setMessages(prevMessages => [...prevMessages, userMessage, aiMessage]);
   
-    // 清空输入区域
+    
     setInputMessage('');
   };
   
@@ -61,7 +60,6 @@ const App = () => {
             {msg.text}
           </div>
         ))}
-        {/* 如果有报告的URL，则显示下载按钮 */}
         {reportUrl && (
           <div className="report-download">
             <a href={reportUrl} download target="_blank" rel="noopener noreferrer">Download Report</a>
