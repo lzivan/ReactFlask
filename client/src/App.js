@@ -6,6 +6,8 @@ const App = () => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [reportUrl, setReportUrl] = useState(''); // 新状态来保存报告的URL
+  const [jobSearchResults, setJobSearchResults] = useState([]);
+  const [emailTemplate, setEmailTemplate] = useState('');
 
 
   const sendMessage = async () => {
@@ -14,41 +16,57 @@ const App = () => {
       sender: 'user',
     };
   
-    // 尝试解析用户消息中的人名和LinkedIn URL
-    const personMatch = inputMessage.match(/\[PERSON: (.*?)\]/);
-    const linkedinUrlMatch = inputMessage.match(/\[LINKEDINURL: (.*?)\]/);
+    // 解析用户消息中的角色、行业和地点
+    const roleMatch = inputMessage.match(/\[ROLE: (.*?)\]/);
+    const industryMatch = inputMessage.match(/\[Industry: (.*?)\]/);
+    const locationMatch = inputMessage.match(/\[LOCATION: (.*?)\]/);
   
-    const personName = personMatch ? personMatch[1] : null;
-    const linkedinUrl = linkedinUrlMatch ? linkedinUrlMatch[1] : null;
+    const role = roleMatch ? roleMatch[1] : null;
+    const industry = industryMatch ? industryMatch[1] : null;
+    const location = locationMatch ? locationMatch[1] : null;
   
-    // 只定义aiMessage，不要立即添加到状态中
+    // 定义AI的回复消息
     let aiMessage;
   
-    try {
-      // 发送消息到后端并等待响应
-      const response = await axios.post('/generate_report', {
-        person: personName,
-        linkedin_url: linkedinUrl,
-      });
+    // 检查是否所有所需信息都已提取
+    if (role && industry && location) {
+      try {
+        // 这里发送请求到您的后端
+        const response = await axios.post('/search_jobs', { role, industry, location });
+        aiMessage = {
+          text: response.data.ai_message,
+          sender: 'ai',
+        };
+        setJobSearchResults(response.data.jobs_data);  // 存储工作搜索结果
+      } catch (error) {
+        console.error('Error sending message:', error);
+        aiMessage = {
+          text: 'Error: Could not process your request.',
+          sender: 'ai',
+        };
+      }
+    } else {
       aiMessage = {
-        text: response.data.message,
-        sender: 'ai',
-      };
-      // 存储报告的URL
-      setReportUrl(response.data.report_url);
-    } catch (error) {
-      console.error('Error sending message:', error);
-      aiMessage = {
-        text: 'Error: Could not retrieve the report.',
+        text: 'Please provide role, industry, and location in the specified format.',
         sender: 'ai',
       };
     }
   
-    // 一次性更新状态以包括用户消息和AI响应
+    // 更新消息列表以包括用户的消息和AI的响应
     setMessages(prevMessages => [...prevMessages, userMessage, aiMessage]);
   
     // 清空输入区域
     setInputMessage('');
+  };
+  
+  const handleCreateEmails = async () => {
+    const designers = ['John Smith', 'Jane Doe', 'Bob Johnson', 'Mary Jane', 'James Bond']
+    try {
+      const response = await axios.post('/create_emails', { email_template: emailTemplate, designers: designers });
+      setReportUrl(response.data.report_url);  // 假设后端返回的是PDF下载链接
+    } catch (error) {
+      console.error('Error creating emails:', error);
+    }
   };
   
   
@@ -61,12 +79,8 @@ const App = () => {
             {msg.text}
           </div>
         ))}
-        {/* 如果有报告的URL，则显示下载按钮 */}
-        {reportUrl && (
-          <div className="report-download">
-            <a href={reportUrl} download target="_blank" rel="noopener noreferrer">Download Report</a>
-          </div>
-        )}
+        
+        
       </div>
       <div className="input-area">
         <input
@@ -77,6 +91,33 @@ const App = () => {
         />
         <button onClick={sendMessage}>Send</button>
       </div>
+      <ul className="job-search-results">
+        {jobSearchResults.map((job, index) => (
+          <li key={index}>
+            <div>Role: {job.title}</div>
+            <div>Company: {job.company}</div>
+            <div>Industry: {job.industry}</div>
+            <div>City: {job.city}</div>
+            <div>Website: <a href={job.website} target="_blank" rel="noopener noreferrer">{job.website}</a></div>
+            <div>Designers: {job.designers.join(', ')}</div>
+          </li>
+        ))}
+      </ul>
+      // 在JSX中
+      <textarea
+        value={emailTemplate}
+        onChange={(e) => setEmailTemplate(e.target.value)}
+        placeholder="Enter email template here..."
+      />
+      <button onClick={handleCreateEmails}>Create Emails</button>
+
+      {reportUrl && (
+        <div className="report-download">
+          <a href={reportUrl} download>Download Emails PDF</a>
+        </div>
+      )}
+
+
     </div>
   );
 };
