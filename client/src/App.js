@@ -5,6 +5,8 @@ import './App.css'; // 假设你的CSS文件名是ChatInterface.css
 const App = () => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
+  const [reportUrl, setReportUrl] = useState(''); // 新状态来保存报告的URL
+
 
   const sendMessage = async () => {
     const userMessage = {
@@ -32,9 +34,10 @@ const App = () => {
         text: response.data.message,
         sender: 'ai',
       };
+      // 存储报告的URL
+      setReportUrl(response.data.report_url);
     } catch (error) {
       console.error('Error sending message:', error);
-      // 如果请求失败，我们可以设置一个错误消息
       aiMessage = {
         text: 'Error: Could not retrieve the report.',
         sender: 'ai',
@@ -58,6 +61,12 @@ const App = () => {
             {msg.text}
           </div>
         ))}
+        {/* 如果有报告的URL，则显示下载按钮 */}
+        {reportUrl && (
+          <div className="report-download">
+            <a href={reportUrl} download target="_blank" rel="noopener noreferrer">Download Report</a>
+          </div>
+        )}
       </div>
       <div className="input-area">
         <input
